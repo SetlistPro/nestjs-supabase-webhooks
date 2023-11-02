@@ -105,8 +105,6 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
       }),
     );
 
-    console.log(eventHandlers);
-
     const [eventHandlerServiceInstance] = await (
       await this.discover.providers((x) => x.name === EventHandlerService.name)
     ).map((x) => x.instance);
