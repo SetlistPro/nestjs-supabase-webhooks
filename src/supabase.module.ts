@@ -24,91 +24,115 @@ function isSupabaseEvent(value: any): value is SupabasePayload {
   imports: [DiscoveryModule],
   controllers: [EventHandlerController],
 })
-export class SupabaseModule implements OnModuleInit {
+export class SupabaseModule extends createConfigurableDynamicRootModule<SupabaseModule, SupabaseModuleConfig>(
+  SUPABASE_MODULE_CONFIG,
+  {
+    providers: [
+      {
+        provide: Symbol('CONTROLLER_HACK'),
+        useFactory: (config: SupabaseModuleConfig) => {
+          const controllerPrefix = 'supabase';
+
+          Reflect.defineMetadata(
+            PATH_METADATA,
+            controllerPrefix,
+            EventHandlerController
+          );
+          config.decorators?.forEach((deco) => {
+            deco(EventHandlerController);
+          });
+        },
+        inject: [SUPABASE_MODULE_CONFIG],
+      },
+      EventHandlerService,
+      SupabaseEventHandlerHeaderGuard,
+    ],
+  }
+) implements OnModuleInit {
   private readonly logger = new Logger(SupabaseModule.name);
 
   constructor(
     private readonly discover: DiscoveryService,
-    // private readonly externalContextCreator: ExternalContextCreator,
-    // @InjectSupabaseConfig()
-    // private readonly supabaseModuleConfig: SupabaseModuleConfig,
+    private readonly externalContextCreator: ExternalContextCreator,
+    @InjectSupabaseConfig()
+    private readonly supabaseModuleConfig: SupabaseModuleConfig,
   ) {
-    // super();
+    super();
   }
 
   public async onModuleInit() {
     this.logger.log('Initializing Supabase Webhooks Module');
 
-    // const eventHandlerMeta =
-    //   await this.discover.providerMethodsWithMetaAtKey<SupabaseEventHandlerConfig>(
-    //     SUPABASE_EVENT_HANDLER,
-    //   );
-    //
-    // if (!eventHandlerMeta.length) {
-    //   this.logger.log('No Supabase Webhooks event handlers were discovered');
-    //   return;
-    // }
+    const eventHandlerMeta =
+      await this.discover.providerMethodsWithMetaAtKey<SupabaseEventHandlerConfig>(
+        SUPABASE_EVENT_HANDLER,
+      );
 
-    // this.logger.log(
-    //   `Discovered ${eventHandlerMeta.length} Supabase Webhooks event handlers`,
-    // );
+    if (!eventHandlerMeta.length) {
+      this.logger.log('No Supabase Webhooks event handlers were discovered');
+      return;
+    }
 
-    // const grouped = groupBy(
-    //   eventHandlerMeta,
-    //   (x) => x.discoveredMethod.parentClass.name,
-    // );
-    //
-    // const eventHandlers = flatten(
-    //   Object.keys(grouped).map((x) => {
-    //     this.logger.log(`Registering supabase webhooks event handlers from ${x}`);
-    //
-    //     return grouped[x].map(({discoveredMethod, meta: config}) => {
-    //       return {
-    //         key: config.triggerName,
-    //         handler: this.externalContextCreator.create(
-    //           discoveredMethod.parentClass.instance,
-    //           discoveredMethod.handler,
-    //           discoveredMethod.methodName,
-    //           undefined, // metadataKey
-    //           undefined, // paramsFactory
-    //           undefined, // contextId
-    //           undefined, // inquirerId
-    //           undefined, // options
-    //           'supabase_webhook_event', // contextType
-    //         ),
-    //       };
-    //     });
-    //   }),
-    // );
-    //
-    // const [eventHandlerServiceInstance] = await (
-    //   await this.discover.providers((x) => x.name === EventHandlerService.name)
-    // ).map((x) => x.instance);
-    //
-    // const eventHandlerService =
-    //   eventHandlerServiceInstance as EventHandlerService;
-    //
-    // eventHandlerService.handleEvent = (evt: Partial<SupabasePayload>) => {
-    //   if (!isSupabaseEvent(evt)) {
-    //     throw new Error('Not a Supabase Event');
-    //   }
-    //   const keys = [evt.table, `${evt?.schema}-${evt?.table}`];
-    //
-    //   // TODO: this should use a map for faster lookups
-    //   const handlers = eventHandlers.filter((x) => keys.includes(x.key));
-    //
-    //   // if (this.supabaseModuleConfig.enableEventLogs) {
-    //   //   this.logger.log(`Received event for: ${keys}`);
-    //   // }
-    //
-    //   if (handlers && handlers.length) {
-    //     return Promise.all(handlers.map((x) => x.handler(evt)));
-    //   } else {
-    //     const errorMessage = `Handler not found for ${keys}`;
-    //     this.logger.error(errorMessage);
-    //     throw new BadRequestException(errorMessage);
-    //   }
-    // };
+    this.logger.log(
+      `Discovered ${eventHandlerMeta.length} Supabase Webhooks event handlers`,
+    );
+
+    const grouped = groupBy(
+      eventHandlerMeta,
+      (x) => x.discoveredMethod.parentClass.name,
+    );
+
+    const eventHandlers = flatten(
+      Object.keys(grouped).map((x) => {
+        this.logger.log(`Registering supabase webhooks event handlers from ${x}`);
+
+        return grouped[x].map(({discoveredMethod, meta: config}) => {
+          return {
+            key: config.triggerName,
+            handler: this.externalContextCreator.create(
+              discoveredMethod.parentClass.instance,
+              discoveredMethod.handler,
+              discoveredMethod.methodName,
+              undefined, // metadataKey
+              undefined, // paramsFactory
+              undefined, // contextId
+              undefined, // inquirerId
+              undefined, // options
+              'supabase_webhook_event', // contextType
+            ),
+          };
+        });
+      }),
+    );
+
+    const [eventHandlerServiceInstance] = await (
+      await this.discover.providers((x) => x.name === EventHandlerService.name)
+    ).map((x) => x.instance);
+
+    const eventHandlerService =
+      eventHandlerServiceInstance as EventHandlerService;
+
+    eventHandlerService.handleEvent = (evt: Partial<SupabasePayload>) => {
+      if (!isSupabaseEvent(evt)) {
+        throw new Error('Not a Supabase Event');
+      }
+      const keys = [evt.table, `${evt?.schema}-${evt?.table}`];
+
+      // TODO: this should use a map for faster lookups
+      const handlers = eventHandlers.filter((x) => keys.includes(x.key));
+
+      // if (this.supabaseModuleConfig.enableEventLogs) {
+      //   this.logger.log(`Received event for: ${keys}`);
+      // }
+
+      if (handlers && handlers.length) {
+        return Promise.all(handlers.map((x) => x.handler(evt)));
+      } else {
+        const errorMessage = `Handler not found for ${keys}`;
+        this.logger.error(errorMessage);
+        throw new BadRequestException(errorMessage);
+      }
+    };
   }
 
 }
