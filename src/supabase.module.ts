@@ -16,7 +16,7 @@ import {EventHandlerService} from './supabase.event-handler.service';
 import {SupabaseEventHandlerHeaderGuard} from './supabase.event-handler.guard';
 
 function isSupabaseEvent(value: any): value is SupabasePayload {
-  return ['trigger', 'table', 'event'].every((it) => it in value);
+  return ['type', 'table', 'schema'].every((it) => it in value);
 }
 
 @Module({
