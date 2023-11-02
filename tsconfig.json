@@ -13,7 +13,6 @@
     "target": "es2017",
     "sourceMap": true,
     "skipLibCheck": true,
-    "allowJs": true,
     "lib": ["es7"],
     "rootDir": "./src",
     "outDir": "./lib"

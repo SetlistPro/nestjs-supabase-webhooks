@@ -14,7 +14,6 @@ import {
 import {InjectSupabaseConfig} from './supabase.decorators';
 import {EventHandlerService} from './supabase.event-handler.service';
 import {SupabaseEventHandlerHeaderGuard} from './supabase.event-handler.guard';
-import {ModulesContainer} from '@nestjs/core';
 
 function isSupabaseEvent(value: any): value is SupabasePayload {
   return ['trigger', 'table', 'event'].every((it) => it in value);
@@ -38,6 +37,7 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
             controllerPrefix,
             EventHandlerController
           );
+
           config.decorators?.forEach((deco) => {
             deco(EventHandlerController);
           });
@@ -121,9 +121,9 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
       // TODO: this should use a map for faster lookups
       const handlers = eventHandlers.filter((x) => keys.includes(x.key));
 
-      // if (this.supabaseModuleConfig.enableEventLogs) {
-      //   this.logger.log(`Received event for: ${keys}`);
-      // }
+      if (this.supabaseModuleConfig.enableEventLogs) {
+        this.logger.log(`Received event for: ${keys}`);
+      }
 
       if (handlers && handlers.length) {
         return Promise.all(handlers.map((x) => x.handler(evt)));
