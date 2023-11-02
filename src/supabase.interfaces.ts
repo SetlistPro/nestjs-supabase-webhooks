@@ -1,5 +1,7 @@
 export interface SupabaseEventHandlerConfig {
-  triggerName: string;
+  type: string;
+  table: string;
+  schema?: string;
 }
 
 type Operation = 'INSERT' | 'UPDATE' | 'DELETE';
@@ -7,7 +9,7 @@ type Operation = 'INSERT' | 'UPDATE' | 'DELETE';
 export interface SupabasePayload {
   type: Operation;
   table: string;
-  schema: string;
+  schema?: string;
   record?: Record<string, any>;
   old_record?: Record<string, any>;
 }

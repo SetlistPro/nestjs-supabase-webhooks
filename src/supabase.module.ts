@@ -88,7 +88,7 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
 
         return grouped[x].map(({discoveredMethod, meta: config}) => {
           return {
-            key: config.triggerName,
+            key: `${config.type}-${config.schema}-${config.table}`,
             handler: this.externalContextCreator.create(
               discoveredMethod.parentClass.instance,
               discoveredMethod.handler,
@@ -105,6 +105,8 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
       }),
     );
 
+    console.log(eventHandlers);
+
     const [eventHandlerServiceInstance] = await (
       await this.discover.providers((x) => x.name === EventHandlerService.name)
     ).map((x) => x.instance);
@@ -116,7 +118,7 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
       if (!isSupabaseEvent(evt)) {
         throw new Error('Not a Supabase Event');
       }
-      const keys = [evt.table, `${evt?.schema}-${evt?.table}`];
+      const keys = [`${evt.type}-${evt?.schema}-${evt?.table}`];
 
       // TODO: this should use a map for faster lookups
       const handlers = eventHandlers.filter((x) => keys.includes(x.key));
