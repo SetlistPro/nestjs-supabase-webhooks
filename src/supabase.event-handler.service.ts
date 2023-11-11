@@ -5,6 +5,5 @@ import { SupabasePayload } from './supabase.interfaces';
 export class EventHandlerService {
   public handleEvent(event: SupabasePayload): any {
     // The implementation for this method is overridden by the containing module
-    console.log(event);
   }
 }
