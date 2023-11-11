@@ -15,7 +15,10 @@ export interface SupabasePayload {
 }
 
 export interface SupabaseModuleConfig {
-  webhookConfig?: {};
+  webhookConfig?: {
+    headerName: string;
+    secret: string;
+  };
   enableEventLogs?: boolean;
   /**
    * An optional array of class decorators to apply to the `EventHandlerController`. These decorators can

@@ -8,23 +8,20 @@ export class SupabaseEventHandlerHeaderGuard implements CanActivate {
   constructor(
     @InjectSupabaseConfig()
     private readonly supabaseWebhookConfig: SupabaseModuleConfig
-  ) {
-    // this.apiSecret =
-    //   typeof supabaseWebhookConfig.webhookConfig.secretFactory === 'function'
-    //     ? supabaseWebhookConfig.webhookConfig.secretFactory()
-    //     : supabaseWebhookConfig.webhookConfig.secretFactory;
-  }
+  ) {}
 
   canActivate(
     context: ExecutionContext
   ): boolean | Promise<boolean> | Observable<boolean> {
-    return true;
+    if(!this.supabaseWebhookConfig.webhookConfig) {
+      return false;
+    }
+
+    const request = context.switchToHttp().getRequest<Request>();
+
+    const secretRequestHeader =
+      request.headers[this.supabaseWebhookConfig.webhookConfig.headerName];
+
+    return secretRequestHeader === this.supabaseWebhookConfig.webhookConfig.secret;
   }
-  //   const request = context.switchToHttp().getRequest<Request>();
-  //
-  //   const secretRequestHeader =
-  //     request.headers[this.supabaseWebhookConfig.webhookConfig.secretHeader];
-  //
-  //   return secretRequestHeader === this.apiSecret;
-  // }
 }
