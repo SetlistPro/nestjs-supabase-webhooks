@@ -5,8 +5,9 @@ import { SupabaseModuleConfig } from './supabase.interfaces';
 
 @Injectable()
 export class SupabaseEventHandlerHeaderGuard implements CanActivate {
+  private readonly logger = new Logger(SupabaseEventHandlerHeaderGuard.name);
+
   constructor(
-    @Inject(Logger) private readonly logger: Logger,
     @InjectSupabaseConfig()
     private readonly supabaseWebhookConfig: SupabaseModuleConfig
   ) {}
