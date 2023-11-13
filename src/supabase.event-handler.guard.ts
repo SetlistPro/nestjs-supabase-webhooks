@@ -25,6 +25,8 @@ export class SupabaseEventHandlerHeaderGuard implements CanActivate {
     const secretRequestHeader =
       request.headers[this.supabaseWebhookConfig.webhookConfig.headerName];
 
+    console.log(secretRequestHeader);
+
     const isAuthentic = secretRequestHeader === this.supabaseWebhookConfig.webhookConfig.secret;
 
     if(!isAuthentic) {
