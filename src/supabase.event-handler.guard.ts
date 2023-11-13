@@ -1,7 +1,9 @@
-import {CanActivate, ExecutionContext, Injectable, Inject, Logger} from '@nestjs/common';
+import {CanActivate, ExecutionContext, Injectable, Logger} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { InjectSupabaseConfig } from './supabase.decorators';
 import { SupabaseModuleConfig } from './supabase.interfaces';
+import * as crypto from 'crypto';
+import {Request} from 'express';
 
 @Injectable()
 export class SupabaseEventHandlerHeaderGuard implements CanActivate {
@@ -22,16 +24,22 @@ export class SupabaseEventHandlerHeaderGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
 
-    const secretRequestHeader =
-      request.headers[this.supabaseWebhookConfig.webhookConfig.headerName];
+    const signature = request.headers[this.supabaseWebhookConfig.webhookConfig.headerName];
+    const body = request?.rawBody;
 
-    console.log(secretRequestHeader);
+    const decodedSignature = Buffer.from(signature, 'base64');
+    const calculatedSignature = crypto
+      .createHmac('sha256', this.supabaseWebhookConfig.webhookConfig.secret)
+      .update(body)
+      .digest();
 
-    const isAuthentic = secretRequestHeader === this.supabaseWebhookConfig.webhookConfig.secret;
+    const hmacMatch = crypto.timingSafeEqual(decodedSignature, calculatedSignature);
 
-    if(!isAuthentic) {
+    if(!hmacMatch) {
       this.logger.warn('Supabase Webhook Guard: Request could not be authentified.')
       return false;
+    } else {
+      this.logger.log('Supabase Webhook Guard: Request authentified.')
     }
 
     return true;

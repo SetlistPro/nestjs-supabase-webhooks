@@ -122,7 +122,7 @@ export class SupabaseModule extends createConfigurableDynamicRootModule<Supabase
       const handlers = eventHandlers.filter((x) => keys.includes(x.key));
 
       if (this.supabaseModuleConfig.enableEventLogs) {
-        this.logger.log(`Received event for: ${keys}`);
+        this.logger.log(`[${evt?.type}] ${evt?.schema}.${evt?.table}`);
       }
 
       if (handlers && handlers.length) {
