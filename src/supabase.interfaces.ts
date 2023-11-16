@@ -16,7 +16,7 @@ export interface SupabasePayload {
 
 export interface SupabaseModuleConfig {
   webhookConfig?: {
-    headerName: string;
+    headerName?: string;
     secret: string;
   };
   enableEventLogs?: boolean;
