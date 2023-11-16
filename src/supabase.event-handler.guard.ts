@@ -23,8 +23,8 @@ export class SupabaseEventHandlerHeaderGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-
-    const signature = request.headers[this.supabaseWebhookConfig.webhookConfig.headerName];
+    const headerName = this.supabaseWebhookConfig.webhookConfig.headerName || 'x-supabase-signature';
+    const signature = request.headers[headerName];
     const body = request?.rawBody;
 
     const decodedSignature = Buffer.from(signature, 'base64');
