@@ -7,6 +7,8 @@ This is a simple Nest.js module that allows you to easily integrate Supabase Dat
 - Nest.js 10.x or higher
 - Supabase Database Webhook, setup with HMAC Signature
 
+[![](https://img.youtube.com/vi/iyTfdYVIQiE/0.jpg)](https://www.youtube.com/watch?v=iyTfdYVIQiE)
+
 ## Installation
 
 ```bash
